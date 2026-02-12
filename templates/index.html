@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    <main class="container">
+      <div class="header">
+        <h1 class="title">{{ title }}</h1>
+        <p class="subtitle">Check if an IPv4 or IPv6 address is compromised.</p>
+      </div>
+
+      <form class="card" method="post" action="/">
+        <label class="label" for="ip">IP address (IPv4 or IPv6)</label>
+        <div class="row">
+          <input
+            class="input"
+            id="ip"
+            name="ip"
+            type="text"
+            placeholder="8.8.8.8 or 2001:4860:4860::8888"
+            value="{{ ip or '' }}"
+            autocomplete="off"
+            required
+          />
+          <button class="button" type="submit">Check</button>
+        </div>
+
+        {% if status %}
+          <p class="result" data-status="{{ status }}">{{ status }}</p>
+
+          {% if status == "Compromised" and intel %}
+            <div class="intel">
+              <div class="intel-top">
+                <div class="intel-details">
+                  <p class="intel-title">Details</p>
+                  <ul class="intel-list">
+                    {% if intel.risk_score is defined %}
+                      <li><span class="k">risk_score</span> <span class="v">{{ intel.risk_score }}</span></li>
+                    {% endif %}
+                    {% if intel.source is defined %}
+                      <li><span class="k">source &rarr;</span> <span class="v">{{ intel.source }}</span></li>
+                    {% endif %}
+                    {% if intel.country_code is defined %}
+                      <li><span class="k">country &rarr;</span> <span class="v">{{ intel.country_code }}</span></li>
+                    {% endif %}
+                    {% if intel.last_seen is defined %}
+                      <li><span class="k">last_seen</span> <span class="v">{{ intel.last_seen }}</span></li>
+                    {% endif %}
+                  </ul>
+                </div>
+
+                {% if (intel.country_flag_url is defined and intel.country_flag_url) or (intel.country_shape_url is defined and intel.country_shape_url) %}
+                  <div class="intel-art" aria-hidden="true">
+                    {% if intel.country_flag_url is defined and intel.country_flag_url %}
+                      <img class="country-flag" src="{{ intel.country_flag_url }}" alt="" />
+                    {% endif %}
+                    {% if intel.country_shape_url is defined and intel.country_shape_url %}
+                      <img class="country-shape" src="{{ intel.country_shape_url }}" alt="" />
+                    {% endif %}
+                  </div>
+                {% endif %}
+              </div>
+
+              {% if intel.seen_on is defined and intel.seen_on %}
+                <p class="intel-title">Example websites (from local dataset)</p>
+                <ul class="sites">
+                  {% for s in intel.seen_on %}
+                    <li>
+                      {% if s.url is defined %}
+                        <a href="{{ s.url }}" target="_blank" rel="noreferrer">{{ s.site if s.site is defined else s.url }}</a>
+                      {% else %}
+                        {{ s.site if s.site is defined else s }}
+                      {% endif %}
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
+
+              {% if intel.map_embed_url is defined and intel.map_embed_url %}
+                <p class="intel-title intel-title-center">Map</p>
+                <div class="map-wrap">
+                  <iframe
+                    class="map"
+                    src="{{ intel.map_embed_url }}"
+                    loading="lazy"
+                    referrerpolicy="no-referrer"
+                    title="Country map"
+                  ></iframe>
+                </div>
+                {% if intel.map_link_url is defined and intel.map_link_url %}
+                  <p class="map-link">
+                    <a href="{{ intel.map_link_url }}" target="_blank" rel="noreferrer">Open larger map</a>
+                  </p>
+                {% endif %}
+              {% endif %}
+            </div>
+          {% elif status == "Not Compromised" %}
+            <p class="hint">No sites found with this IP.</p>
+          {% endif %}
+        {% endif %}
+      </form>
+    </main>
+  </body>
+</html>
+
